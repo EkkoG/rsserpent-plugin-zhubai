@@ -1,15 +1,15 @@
 import json
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict
+from typing import Any
 
 from rsserpent_rev.utils import HTTPClient, cached
-
 
 path = "/zhubai/{sub:str}"
 
 
 @cached
-async def provider(sub: str) -> Dict[str, Any]:
+async def provider(sub: str) -> dict[str, Any]:
     """Zhubai newsletter full content feed."""
     u = f"https://{sub}.zhubai.love"
     async with HTTPClient() as http:
@@ -32,9 +32,7 @@ async def provider(sub: str) -> Dict[str, Any]:
                 "link": f"{u}/posts/{item['id']}",
                 "description": parse_content(item["content"]),
                 "author": item["author"]["name"],
-                "pub_date": datetime.fromtimestamp(
-                    int(item["created_at"] / 1000), tz=timezone.utc
-                ).isoformat(),
+                "pub_date": datetime.fromtimestamp(int(item["created_at"] / 1000), tz=timezone.utc).isoformat(),
             }
             for item in data
         ],
@@ -48,7 +46,7 @@ def parse_content(content: str) -> str:
     return f"<div>{html}</div>"
 
 
-def translate_text(e: Dict[str, Any]) -> str:
+def translate_text(e: dict[str, Any]) -> str:
     """Translate text block."""
     if not e.get("text"):
         return ""
@@ -62,7 +60,7 @@ def translate_text(e: Dict[str, Any]) -> str:
     return f"<span{style}>{e['text']}</span>"
 
 
-def translate(e: Dict[str, Any]) -> str:
+def translate(e: dict[str, Any]) -> str:
     """Translate content block to html."""
     if "type" not in e:
         return translate_text(e)
@@ -71,7 +69,7 @@ def translate(e: Dict[str, Any]) -> str:
     if "children" in e:
         children = "".join([translate(c) for c in e["children"]])
 
-    translators: Dict[str, Callable[[Dict[str, Any]], str]] = {
+    translators: dict[str, Callable[[dict[str, Any]], str]] = {
         "divider": lambda _: "<div><hr></div>",
         "block-code": lambda _: f"<pre>{children}</pre>",
         "block-quote": lambda _: f"<blockquote>{children}</blockquote>",
